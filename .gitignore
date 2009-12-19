@@ -1,4 +1,3 @@
-wp-content/plugins
-wp-content/themes
+wp-content/
 wp-config-sample.php
 wp-config.php
