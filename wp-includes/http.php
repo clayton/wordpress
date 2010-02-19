@@ -1296,16 +1296,9 @@ class WP_Http_Curl {
 
 		// CURLOPT_TIMEOUT and CURLOPT_CONNECTTIMEOUT expect integers.  Have to use ceil since
 		// a value of 0 will allow an ulimited timeout.
-		// Use _MS if available.
-		if ( defined( 'CURLOPT_TIMEOUT_MS' ) ) {
-			$timeout_ms = (int) ceil( 1000 * $r['timeout'] );
-			curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT_MS, $timeout_ms );
-			curl_setopt( $handle, CURLOPT_TIMEOUT_MS, $timeout_ms );
-		} else {
-			$timeout = (int) ceil( $r['timeout'] );
-			curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, $timeout );
-			curl_setopt( $handle, CURLOPT_TIMEOUT, $timeout );
-		}
+		$timeout = (int) ceil( $r['timeout'] );
+		curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, $timeout );
+		curl_setopt( $handle, CURLOPT_TIMEOUT, $timeout );
 
 		curl_setopt( $handle, CURLOPT_URL, $url);
 		curl_setopt( $handle, CURLOPT_RETURNTRANSFER, true );
@@ -1823,18 +1816,18 @@ class WP_Http_Encoding {
 	 * @return string|bool False on failure.
 	 */
 	function decompress( $compressed, $length = null ) {
-		$decompressed = WP_Http_Encoding::compatible_gzinflate( $compressed );
 
-		if ( false !== $decompressed )
+		if ( false !== ( $decompressed = @gzinflate( $compressed ) ) )
 			return $decompressed;
 
-		$decompressed = gzuncompress( $compressed );
+		if ( false !== ( $decompressed = WP_Http_Encoding::compatible_gzinflate( $compressed ) ) )
+			return $decompressed;
 
-		if ( false !== $decompressed )
+		if ( false !== ( $decompressed = @gzuncompress( $compressed ) ) )
 			return $decompressed;
 
 		if ( function_exists('gzdecode') ) {
-			$decompressed = gzdecode( $compressed );
+			$decompressed = @gzdecode( $compressed );
 
 			if ( false !== $decompressed )
 				return $decompressed;
@@ -1923,7 +1916,7 @@ class WP_Http_Encoding {
 		if ( is_array( $headers ) ) {
 			if ( array_key_exists('content-encoding', $headers) && ! empty( $headers['content-encoding'] ) )
 				return true;
-		} else if( is_string( $headers ) ) {
+		} else if ( is_string( $headers ) ) {
 			return ( stripos($headers, 'content-encoding:') !== false );
 		}
 
